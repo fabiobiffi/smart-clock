@@ -1,0 +1,77 @@
+/* AMOLED-first design tokens. No color should be written directly in components. */
+:root {
+  --bg: #000000;
+  --surface-1: #101010;
+  --surface-2: #181818;
+  --border: #282828;
+
+  --text: #ffffff;
+  --text-2: #a3a3a3;
+  --text-3: #6b6b6b;
+  --accent: #8ab4dc;
+
+  --status-up: #3fb866;
+  --status-degraded: #e3a33b;
+  --status-down: #ef5350;
+  --status-unknown: #8a8a8a;
+
+  /* Layout unit: 1% of the real height, capped by the width (16:9). */
+  --app-h: 100vh;
+  --u: min(calc(var(--app-h) / 100), 0.5625vw);
+
+  --gutter: calc(var(--u) * 5);
+  --radius: calc(var(--u) * 4);
+
+  /* Animated weather background: subtle tints, never large bright surfaces. */
+  --fx-opacity: 1;
+  --fx-sun: rgba(227, 163, 59, 0.2);
+  --fx-star: #ffffff;
+  --fx-cloud: rgba(150, 160, 175, 0.12);
+  --fx-fog: rgba(170, 170, 180, 0.1);
+  --fx-rain: rgba(138, 180, 220, 0.45);
+  --fx-snow: rgba(255, 255, 255, 0.6);
+  --fx-glow: rgba(170, 190, 255, 0.09);
+
+  /* Brand customization of the service cards. */
+  --brand-strength: 1;
+  --brand-logo-opacity: 1;
+  /* Secondary text on colored cards: translucent white, stays neutral on every tint. */
+  --card-text-2: rgba(255, 255, 255, 0.72);
+  --card-text-3: rgba(255, 255, 255, 0.5);
+
+  /* Markets: semantics separate from service statuses, same tones. */
+  --market-up: var(--status-up);
+  --market-down: var(--status-down);
+
+  --shift-x: 0px;
+  --shift-y: 0px;
+
+  --font: Roboto, 'SF Pro Display', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  --page-transition: 280ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Night mode: reduced contrast and luminance. Does not affect hardware brightness. */
+:root[data-night='true'] {
+  --surface-1: #080808;
+  --surface-2: #0e0e0e;
+  --border: #181818;
+  --text: #8f8f8f;
+  --text-2: #5e5e5e;
+  --text-3: #3f3f3f;
+  --accent: #4d6680;
+  --status-up: #2c7a46;
+  --status-degraded: #94692a;
+  --status-down: #9c3836;
+  --status-unknown: #555555;
+  --fx-opacity: 0.45;
+  --brand-strength: 0.5;
+  --brand-logo-opacity: 0.6;
+  --card-text-2: rgba(255, 255, 255, 0.36);
+  --card-text-3: rgba(255, 255, 255, 0.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --page-transition: 0ms linear;
+  }
+}

@@ -1,0 +1,9 @@
+services:
+  test:
+    build:
+      context: .
+      target: test
+    # Ricostruisce sempre: `make test` deve girare sul codice corrente.
+    pull_policy: build
+    image: clock-dashboard:test
+    container_name: clock-dashboard-test

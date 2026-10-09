@@ -1,0 +1,21 @@
+services:
+  dashboard:
+    build:
+      context: .
+      target: runtime
+    image: clock-dashboard:latest
+    container_name: clock-dashboard
+    restart: unless-stopped
+    ports:
+      - "${DASHBOARD_PORT:-8080}:8080"
+    environment:
+      PORT: 8080
+      TZ: Europe/Rome
+      # Weather location (Open-Meteo, no API key). Change it here.
+      WEATHER_LOCATION_NAME: ${WEATHER_LOCATION_NAME:-Mezzago}
+      WEATHER_LATITUDE: ${WEATHER_LATITUDE:-45.62898}
+      WEATHER_LONGITUDE: ${WEATHER_LONGITUDE:-9.44485}
+      # Service check interval (ms): 5 minutes
+      HEALTH_INTERVAL_MS: ${HEALTH_INTERVAL_MS:-300000}
+      # Confirmation check for a service that has just failed (ms, 0 = off)
+      HEALTH_RETRY_MS: ${HEALTH_RETRY_MS:-30000}

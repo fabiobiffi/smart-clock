@@ -1,0 +1,54 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  width: 100%;
+  height: var(--app-h);
+  overflow: hidden;
+  background: var(--bg);
+}
+
+body {
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  overscroll-behavior: none;
+  transition: color 600ms ease;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+  font-weight: inherit;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dashboard content: shifts a few pixels over time (anti burn-in). */
+.burn-in-shift {
+  transform: translate3d(var(--shift-x), var(--shift-y), 0);
+  transition: transform 2s ease;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

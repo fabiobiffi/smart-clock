@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { formatTemperature, formatTimestamp } from '../lib/format.ts'
-import { describeWeather } from '../lib/weatherCodes.ts'
+import { describeWeather, type WeatherIconName } from '../lib/weatherCodes.ts'
 import type { WeatherState } from '../composables/useWeather.ts'
 import WeatherIcon from './WeatherIcon.vue'
 
-const props = defineProps<{ weather: WeatherState; now: Date }>()
+/** `icon` overrides the icon of the current conditions (scene preview). */
+const props = defineProps<{ weather: WeatherState; now: Date; icon?: WeatherIconName | null }>()
 
 const descriptor = computed(() => {
   const c = props.weather.conditions
@@ -30,13 +31,15 @@ const statusLine = computed(() => {
   <div class="weather" :class="{ 'is-stale': weather.stale && weather.conditions }">
     <template v-if="weather.conditions && descriptor">
       <div class="weather__main">
-        <WeatherIcon class="weather__icon" :name="descriptor.icon" />
+        <span class="weather__badge">
+          <WeatherIcon class="weather__icon" :name="icon ?? descriptor.icon" />
+        </span>
         <span class="weather__temp tabular">{{ formatTemperature(weather.conditions.temperatureC) }}</span>
       </div>
       <p class="weather__label">{{ descriptor.label }}</p>
       <p class="weather__range tabular">
-        <span><span class="visually-hidden">Low </span>↓ {{ formatTemperature(weather.conditions.minC) }}</span>
-        <span><span class="visually-hidden">High </span>↑ {{ formatTemperature(weather.conditions.maxC) }}</span>
+        <span><span class="visually-hidden">Low </span><span class="weather__arrow is-low">↓</span> {{ formatTemperature(weather.conditions.minC) }}</span>
+        <span><span class="visually-hidden">High </span><span class="weather__arrow is-high">↑</span> {{ formatTemperature(weather.conditions.maxC) }}</span>
       </p>
     </template>
     <p class="weather__meta" :class="{ 'is-warning': weather.stale && weather.conditions }">
@@ -69,11 +72,29 @@ const statusLine = computed(() => {
   gap: calc(var(--u) * 3);
 }
 
+/* Icon on a soft halo in the scene color (static gradient, no filters). */
+.weather__badge {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.weather__badge::before {
+  content: '';
+  position: absolute;
+  inset: -35%;
+  border-radius: 50%;
+  background: radial-gradient(circle closest-side, var(--scene-accent), transparent);
+  opacity: 0.14;
+}
+
 .weather__icon {
+  position: relative;
   width: calc(var(--u) * 14);
   height: calc(var(--u) * 14);
-  flex: none;
-  color: var(--accent);
+  color: var(--scene-accent);
+  transition: color 2.4s ease;
 }
 
 .weather__temp {
@@ -96,6 +117,14 @@ const statusLine = computed(() => {
   gap: calc(var(--u) * 4);
   font-size: calc(var(--u) * 4.8);
   color: var(--text-2);
+}
+
+.weather__arrow.is-low {
+  color: var(--temp-low);
+}
+
+.weather__arrow.is-high {
+  color: var(--temp-high);
 }
 
 .weather__meta {

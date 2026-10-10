@@ -15,14 +15,22 @@ export interface Particle {
 
 export interface SceneLayers {
   sun: boolean
+  /** Soft cool halo in the corner (night scenes). */
+  moon: boolean
   stars: Particle[]
+  /** Rare shooting star crossing the sky (clear night only). */
+  shootingStar: boolean
+  /** Specks of light slowly rising in the sunshine. */
+  motes: Particle[]
   clouds: Particle[]
   fog: Particle[]
   rain: Particle[]
   /** Heavy rain: longer, faster drops. */
   heavyRain: boolean
+  /** Small ripples where the drops land. */
+  splashes: Particle[]
   snow: Particle[]
-  /** Slow, faint glow (not a strobing flash). */
+  /** Slow, faint glow with a dim bolt (not a strobing flash). */
   glow: boolean
 }
 
@@ -83,7 +91,20 @@ function particles(count: number, range: Range, rnd: () => number): Particle[] {
 export function buildScene(icon: WeatherIconName): SceneLayers | null {
   if (icon === 'unknown') return null
   const rnd = random(seedOf(icon))
-  const scene: SceneLayers = { sun: false, stars: [], clouds: [], fog: [], rain: [], heavyRain: false, snow: [], glow: false }
+  const scene: SceneLayers = {
+    sun: false,
+    moon: false,
+    stars: [],
+    shootingStar: false,
+    motes: [],
+    clouds: [],
+    fog: [],
+    rain: [],
+    heavyRain: false,
+    splashes: [],
+    snow: [],
+    glow: false,
+  }
 
   const stars = (count: number) =>
     particles(count, { x: [2, 98], y: [3, 72], size: [1, 2.2], duration: [3, 7], opacity: [0.35, 0.85] }, rnd)
@@ -91,36 +112,47 @@ export function buildScene(icon: WeatherIconName): SceneLayers | null {
     particles(count, { y: [-8, 45], size: [55, 95], duration: [140, 220], opacity }, rnd)
   const rain = (count: number, heavy: boolean) =>
     particles(count, { size: heavy ? [7, 11] : [4, 7], duration: heavy ? [0.7, 1] : [1.1, 1.6], opacity: [0.35, 0.8] }, rnd)
+  const splashes = (count: number) =>
+    particles(count, { y: [86, 97], size: [2.5, 5], duration: [1.4, 2.4], opacity: [0.3, 0.7] }, rnd)
+  const motes = (count: number) =>
+    particles(count, { y: [55, 100], size: [0.5, 1.1], duration: [16, 28], opacity: [0.3, 0.7], drift: [2, 6] }, rnd)
 
   switch (icon) {
     case 'clear-day':
       scene.sun = true
+      scene.motes = motes(12)
       break
     case 'clear-night':
-      scene.stars = stars(26)
+      scene.moon = true
+      scene.stars = stars(28)
+      scene.shootingStar = true
       break
     case 'partly-day':
       scene.sun = true
       scene.clouds = clouds(3, [0.6, 0.9])
+      scene.motes = motes(6)
       break
     case 'partly-night':
+      scene.moon = true
       scene.stars = stars(16)
       scene.clouds = clouds(3, [0.6, 0.9])
       break
     case 'cloudy':
-      scene.clouds = clouds(5, [0.7, 1])
+      scene.clouds = clouds(6, [0.7, 1])
       break
     case 'fog':
-      scene.fog = particles(3, { y: [15, 70], size: [18, 30], duration: [50, 80], opacity: [0.6, 1] }, rnd)
+      scene.fog = particles(5, { y: [10, 80], size: [16, 30], duration: [40, 90], opacity: [0.5, 1] }, rnd)
       break
     case 'drizzle':
       scene.clouds = clouds(3, [0.6, 0.9])
-      scene.rain = rain(18, false)
+      scene.rain = rain(20, false)
+      scene.splashes = splashes(5)
       break
     case 'rain':
       scene.clouds = clouds(3, [0.7, 1])
-      scene.rain = rain(34, true)
+      scene.rain = rain(32, true)
       scene.heavyRain = true
+      scene.splashes = splashes(8)
       break
     case 'snow':
       scene.clouds = clouds(2, [0.5, 0.8])
@@ -128,8 +160,9 @@ export function buildScene(icon: WeatherIconName): SceneLayers | null {
       break
     case 'thunder':
       scene.clouds = clouds(4, [0.8, 1])
-      scene.rain = rain(34, true)
+      scene.rain = rain(30, true)
       scene.heavyRain = true
+      scene.splashes = splashes(8)
       scene.glow = true
       break
   }

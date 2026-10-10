@@ -21,24 +21,30 @@ const scene = computed<WeatherIconName | null>(() => {
   return c ? describeWeather(c.weatherCode, c.isDay).icon : null
 })
 
-const time = computed(() => formatTime(props.now))
+const time = computed(() => {
+  const [hours = '', minutes = ''] = formatTime(props.now).split(':')
+  return { hours, minutes }
+})
 const weekday = computed(() => formatWeekday(props.now))
 const date = computed(() => formatDate(props.now))
 </script>
 
 <template>
-  <div class="clock-page">
+  <div class="clock-page" :data-scene="scene ?? undefined" :class="{ 'is-paused': !active }">
     <WeatherBackdrop :icon="scene" :active="active" />
     <div class="clock-dashboard burn-in-shift">
       <div class="clock">
-        <time class="clock__time tabular" :datetime="now.toISOString()">{{ time }}</time>
+        <time class="clock__time tabular" :datetime="now.toISOString()">
+          <span>{{ time.hours }}</span><span class="clock__sep">:</span><span :key="time.minutes" class="clock__minutes">{{ time.minutes }}</span>
+        </time>
       </div>
       <aside class="side">
         <div class="date">
           <p class="date__weekday">{{ weekday }}</p>
           <p class="date__full">{{ date }}</p>
         </div>
-        <WeatherPanel :weather="weather" :now="now" />
+        <hr class="side__divider" />
+        <WeatherPanel :weather="weather" :now="now" :icon="previewScene" />
       </aside>
     </div>
   </div>
@@ -48,6 +54,10 @@ const date = computed(() => formatDate(props.now))
 .clock-page {
   position: relative;
   height: 100%;
+}
+
+.clock-page.is-paused :deep(.wi *) {
+  animation-play-state: paused;
 }
 
 .clock-dashboard {
@@ -76,6 +86,26 @@ const date = computed(() => formatDate(props.now))
   white-space: nowrap;
 }
 
+/* Separator in the scene color, slightly recessed. */
+.clock__sep {
+  display: inline-block;
+  margin: 0 0.02em;
+  color: var(--scene-accent);
+  opacity: 0.7;
+  transform: translateY(-0.06em);
+  transition: color 2.4s ease;
+}
+
+/* New minute: the digits settle in softly (once a minute, short). */
+.clock__minutes {
+  display: inline-block;
+  animation: minute-in 700ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes minute-in {
+  from { opacity: 0; transform: translateY(0.08em); }
+}
+
 .side {
   display: flex;
   flex-direction: column;
@@ -91,10 +121,29 @@ const date = computed(() => formatDate(props.now))
   color: var(--text);
 }
 
+.date__weekday::first-letter {
+  color: var(--scene-accent);
+  transition: color 2.4s ease;
+}
+
+.side__divider {
+  width: 62%;
+  height: 1px;
+  margin: 0;
+  border: 0;
+  background: linear-gradient(to right, var(--scene-accent), transparent);
+  opacity: 0.35;
+}
+
 .date__full {
   margin-top: calc(var(--u) * 1);
   font-size: calc(var(--u) * 5.2);
   font-weight: 400;
   color: var(--text-2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .clock__minutes {
+    animation: none;
+  }
 }
 </style>

@@ -31,6 +31,18 @@
   --fx-rain: rgba(138, 180, 220, 0.45);
   --fx-snow: rgba(255, 255, 255, 0.6);
   --fx-glow: rgba(170, 190, 255, 0.09);
+  --fx-moon: rgba(150, 170, 255, 0.16);
+  --fx-mote: rgba(255, 214, 150, 0.9);
+  --fx-ray: rgba(255, 190, 110, 0.05);
+  --fx-bolt: rgba(200, 205, 255, 0.4);
+
+  /* Current weather scene: overridden per condition by [data-scene]. */
+  --scene-accent: var(--accent);
+  --scene-sky: transparent;
+
+  /* Daily min/max. */
+  --temp-low: #7fb2e5;
+  --temp-high: #f0a868;
 
   /* Brand customization of the service cards. */
   --brand-strength: 1;
@@ -50,6 +62,22 @@
   --page-transition: 280ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
+/*
+ * Weather scenes: an accent color (icon, clock separator) and a faint sky tint at the
+ * top of the screen. The bottom stays pure black (AMOLED pixels off).
+ */
+[data-scene] { --scene-accent: var(--scene-accent-day, var(--accent)); }
+[data-scene='clear-day'] { --scene-accent-day: #f5b961; --scene-sky: rgba(230, 140, 50, 0.13); }
+[data-scene='clear-night'] { --scene-accent-day: #aab8ff; --scene-sky: rgba(55, 75, 170, 0.16); }
+[data-scene='partly-day'] { --scene-accent-day: #f0c27a; --scene-sky: rgba(190, 150, 100, 0.1); }
+[data-scene='partly-night'] { --scene-accent-day: #9fb0e8; --scene-sky: rgba(60, 75, 150, 0.13); }
+[data-scene='cloudy'] { --scene-accent-day: #aab8c8; --scene-sky: rgba(120, 135, 155, 0.11); }
+[data-scene='fog'] { --scene-accent-day: #bcc0c8; --scene-sky: rgba(150, 150, 160, 0.1); }
+[data-scene='drizzle'] { --scene-accent-day: #8ec5e8; --scene-sky: rgba(70, 120, 170, 0.12); }
+[data-scene='rain'] { --scene-accent-day: #7fb2e5; --scene-sky: rgba(45, 95, 170, 0.15); }
+[data-scene='snow'] { --scene-accent-day: #d4eaff; --scene-sky: rgba(150, 190, 230, 0.12); }
+[data-scene='thunder'] { --scene-accent-day: #b9a6ff; --scene-sky: rgba(105, 75, 190, 0.15); }
+
 /* Night mode: reduced contrast and luminance. Does not affect hardware brightness. */
 :root[data-night='true'] {
   --surface-1: #080808;
@@ -68,6 +96,13 @@
   --brand-logo-opacity: 0.6;
   --card-text-2: rgba(255, 255, 255, 0.36);
   --card-text-3: rgba(255, 255, 255, 0.25);
+  --temp-low: #4d6a88;
+  --temp-high: #8a6440;
+}
+
+/* Night mode also dims the scene accent (falls back to the text color without color-mix). */
+:root[data-night='true'] [data-scene] {
+  --scene-accent: color-mix(in srgb, var(--scene-accent-day, var(--accent)) 55%, black);
 }
 
 @media (prefers-reduced-motion: reduce) {

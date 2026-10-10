@@ -13,6 +13,9 @@ describe('buildScene', () => {
     expect(buildScene('snow')?.snow.length).toBeGreaterThan(0)
     expect(buildScene('thunder')?.glow).toBe(true)
     expect(buildScene('fog')?.fog.length).toBeGreaterThan(0)
+    expect(buildScene('clear-night')?.moon).toBe(true)
+    expect(buildScene('clear-day')?.motes.length).toBeGreaterThan(0)
+    expect(buildScene('rain')?.splashes.length).toBeGreaterThan(0)
   })
 
   it('is deterministic (no jumps between renders)', () => {
@@ -24,7 +27,7 @@ describe('buildScene', () => {
       const s = buildScene(name)
       expect(s).not.toBeNull()
       if (!s) continue
-      const all = [...s.stars, ...s.clouds, ...s.fog, ...s.rain, ...s.snow]
+      const all = [...s.stars, ...s.motes, ...s.clouds, ...s.fog, ...s.rain, ...s.splashes, ...s.snow]
       expect(all.length).toBeLessThanOrEqual(45)
       for (const p of all) {
         expect(p.x).toBeGreaterThanOrEqual(0)

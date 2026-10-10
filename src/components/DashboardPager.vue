@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { clampPage, isHorizontalIntent, resolveSwipe } from '../lib/swipe.ts'
+import { DRAG_SLOP_PX, clampPage, isHorizontalIntent, resolveSwipe } from '../lib/swipe.ts'
 import type { DashboardDefinition } from '../types.ts'
 import PageIndicator from './PageIndicator.vue'
 
@@ -40,38 +40,38 @@ function applyDrag(dx: number): void {
   })
 }
 
-function onPointerDown(event: PointerEvent): void {
-  if (!event.isPrimary || event.button !== 0) return
+function begin(id: number, x: number, y: number, target: EventTarget | null): void {
   suppressClick = false
   // Inner elements can opt out of swipe handling.
-  if ((event.target as Element | null)?.closest('[data-no-swipe]')) return
-  gesture = { id: event.pointerId, x: event.clientX, y: event.clientY, t: performance.now(), dx: 0 }
+  if ((target as Element | null)?.closest?.('[data-no-swipe]')) return
+  gesture = { id, x, y, t: performance.now(), dx: 0 }
 }
 
-function onPointerMove(event: PointerEvent): void {
-  if (!gesture || event.pointerId !== gesture.id) return
-  const dx = event.clientX - gesture.x
-  const dy = event.clientY - gesture.y
+/** Returns true while the gesture is a horizontal page drag. */
+function move(id: number, x: number, y: number): boolean {
+  if (!gesture || id !== gesture.id) return false
+  const dx = x - gesture.x
+  const dy = y - gesture.y
   if (!dragging.value) {
-    if (!isHorizontalIntent(dx, dy)) return
-    dragging.value = true
-    try {
-      root.value?.setPointerCapture(event.pointerId)
-    } catch {
-      /* pointer no longer active: continue without capture */
+    if (!isHorizontalIntent(dx, dy)) {
+      // Clearly vertical: leave the gesture to the native scroll (e.g. news list).
+      if (Math.hypot(dx, dy) > DRAG_SLOP_PX) gesture = null
+      return false
     }
+    dragging.value = true
   }
   gesture.dx = dx
   applyDrag(dx)
+  return true
 }
 
-function finish(event: PointerEvent, cancelled: boolean): void {
-  if (!gesture || event.pointerId !== gesture.id) return
+function finish(id: number, x: number, y: number, cancelled: boolean): void {
+  if (!gesture || id !== gesture.id) return
   const wasDragging = dragging.value
   if (wasDragging && !cancelled) {
     const direction = resolveSwipe({
-      dx: event.clientX - gesture.x,
-      dy: event.clientY - gesture.y,
+      dx: x - gesture.x,
+      dy: y - gesture.y,
       durationMs: performance.now() - gesture.t,
       width: root.value?.clientWidth ?? window.innerWidth,
     })
@@ -83,6 +83,56 @@ function finish(event: PointerEvent, cancelled: boolean): void {
   cancelAnimationFrame(frame)
   // Return to the position managed by Vue (with transition).
   if (wasDragging && track.value) track.value.style.transform = baseTransform()
+}
+
+/*
+ * Mouse/pen use pointer events. Touch uses touch events instead: inside a native
+ * scroller (news list) the browser fires pointercancel as soon as it claims the
+ * gesture, killing the swipe; touchmove keeps flowing and, being non-passive,
+ * lets us block the native scroll once the gesture is clearly horizontal.
+ */
+function onPointerDown(event: PointerEvent): void {
+  if (event.pointerType === 'touch' || !event.isPrimary || event.button !== 0) return
+  begin(event.pointerId, event.clientX, event.clientY, event.target)
+}
+
+function onPointerMove(event: PointerEvent): void {
+  if (event.pointerType === 'touch') return
+  const wasDragging = dragging.value
+  if (move(event.pointerId, event.clientX, event.clientY) && !wasDragging) {
+    try {
+      root.value?.setPointerCapture(event.pointerId)
+    } catch {
+      /* pointer no longer active: continue without capture */
+    }
+  }
+}
+
+function onPointerEnd(event: PointerEvent, cancelled: boolean): void {
+  if (event.pointerType === 'touch') return
+  finish(event.pointerId, event.clientX, event.clientY, cancelled)
+}
+
+function onTouchStart(event: TouchEvent): void {
+  // Multi-touch is never a page swipe.
+  if (event.touches.length > 1) {
+    if (gesture) finish(gesture.id, gesture.x, gesture.y, true)
+    return
+  }
+  const touch = event.changedTouches[0]
+  if (touch) begin(touch.identifier, touch.clientX, touch.clientY, event.target)
+}
+
+function onTouchMove(event: TouchEvent): void {
+  if (!gesture) return
+  const touch = Array.from(event.changedTouches).find((t) => t.identifier === gesture?.id)
+  if (touch && move(touch.identifier, touch.clientX, touch.clientY) && event.cancelable) event.preventDefault()
+}
+
+function onTouchEnd(event: TouchEvent, cancelled: boolean): void {
+  if (!gesture) return
+  const touch = Array.from(event.changedTouches).find((t) => t.identifier === gesture?.id)
+  if (touch) finish(touch.identifier, touch.clientX, touch.clientY, cancelled)
 }
 
 function onClickCapture(event: MouseEvent): void {
@@ -110,8 +160,12 @@ onBeforeUnmount(() => {
     class="pager"
     @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
-    @pointerup="finish($event, false)"
-    @pointercancel="finish($event, true)"
+    @pointerup="onPointerEnd($event, false)"
+    @pointercancel="onPointerEnd($event, true)"
+    @touchstart.passive="onTouchStart"
+    @touchmove="onTouchMove"
+    @touchend="onTouchEnd($event, false)"
+    @touchcancel="onTouchEnd($event, true)"
     @click.capture="onClickCapture"
   >
     <div ref="track" class="pager__track" :class="{ 'is-dragging': dragging }" :style="trackStyle">
